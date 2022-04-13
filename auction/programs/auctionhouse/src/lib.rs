@@ -13,6 +13,22 @@ declare_id!("3VwUm7B1u5VDonuwP4NXQVkkkam3NGpAuKanChxkRDAQ");
 #[program]
 pub mod auctionhouse {
     use super::*;
+    /**
+     * @dev Create open auction
+     * In this function the NFT is sent to the auction PDA and add main variables
+     * In the Context<CreateOpenAuction>, auction_ata and owner_ata is the NFT ata 
+     * of auction and owner.
+     * mint and token_mint is mint address of NFT and bid token. 
+     * @param bump: The bump used in auction
+     * @param title: The auction's title
+     * @param floor: The floor price in the auction
+     * @param increment: The minimum bid increasement price
+     * @param start_time: The start time of this auction 
+     * @param end_time: The end time of this auction
+     * @param bidder_cap: The Maximum bidders
+     * @param token_amount: The token amount to be auctioned
+     * @param project_id: The project id for each different project
+     */
     pub fn create_open_auction(
         ctx: Context<CreateOpenAuction>,
         bump: u8,
@@ -23,12 +39,14 @@ pub mod auctionhouse {
         end_time: u64,
         bidder_cap: u64,
         token_amount: u64,
+        project_id: u16,
     ) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let auction_ata = &ctx.accounts.auction_ata;
         let owner = &ctx.accounts.owner;
         let owner_ata = &ctx.accounts.owner_ata;
         let mint = &ctx.accounts.mint;
+        let token_mint = &ctx.accounts.token_mint;
         let token_program = &ctx.accounts.token_program;
         let ata_program = &ctx.accounts.ata_program;
         let system_program = &ctx.accounts.system_program;
@@ -62,6 +80,7 @@ pub mod auctionhouse {
 
         auction.owner = *owner.key;
         auction.mint = mint.key();
+        auciton.token_mint = token_mint.key();
         auction.token_amount = token_amount;
 
         auction.start_time = if start_time == 0 {
@@ -80,6 +99,7 @@ pub mod auctionhouse {
         auction.min_bid_increment = increment;
 
         auction.bump = bump;
+        auction.project_id = project_id;
 
         create_ata(
             owner.to_account_info(),
@@ -104,6 +124,10 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Cancel Open Auction
+     * In this function the owner of the auction can cancel his auction
+     */
     pub fn cancel_open_auction(ctx: Context<CancelOpenAuction>) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
 
@@ -120,6 +144,15 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Make open auction bid
+     * In this function the spl_token(for bid) is sent to the auction PDA and 
+     * add bid amount
+     * In the Context<MakeOpenBid>, auction_ata and bidder_ata is the bid token 
+     * ata of auction and bidder.
+     * token_mint is mint address of bid token. 
+     * @param amount: The bid amount of the user for this auction 
+     */
     pub fn make_open_bid(ctx: Context<MakeOpenBid>, amount: u64) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let auction_ata = &ctx.accounts.auction_ata;
@@ -215,6 +248,13 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Reclaim Open Bid
+     * The users who are not a winner can reclaim their bids from the PDA
+     * In the Context<ReclaimOpenBid>, auction_ata and bidder_ata is the 
+     * bid token ata of auction and bidder.
+     * treasury_wallet is wallet address to receive cancel fee- <dev fee>. 
+     */
     pub fn reclaim_open_bid(ctx: Context<ReclaimOpenBid>) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let bidder: &Signer = &ctx.accounts.bidder;
@@ -261,6 +301,14 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Withdraw Item Open
+     * The winner can claim their winner prize- NFT. The NFT will be sent to 
+     * winner from the PDA.
+     * In the Context<WithdrawItemOpen>, auction_ata and highest_bidder_ata is 
+     * the NFT ata of auction and highet_bidder(winner).
+     * mint is mint address of NFT token. 
+     */
     pub fn withdraw_item_open(ctx: Context<WithdrawItemOpen>) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let auction_ata = &ctx.accounts.auction_ata;
@@ -316,6 +364,12 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Withdraw Winning Bid Open
+     * The auction creator can withdraw winning bid from the PDA. 
+     * In the Context<WithdrawWinningBidOpen>, auction_ata and ownner_ata is the 
+     * bid token ata of auction and auction_owner.
+     */
     pub fn withdraw_winning_bid_open(ctx: Context<WithdrawWinningBidOpen>) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let owner: &Signer = &ctx.accounts.owner;
@@ -369,6 +423,13 @@ pub mod auctionhouse {
         Ok(())
     }
 
+    /**
+     * @dev Reclaim Item Open
+     * The auction creator can reclaim the NFT from PDA if there is no bidder and 
+     * the auction is ended.
+     * In the Context<ReclaimItemOpen>, auction_ata and ownner_ata is the NFT ata
+     * of auction and auction_owner.
+     */
     pub fn reclaim_item_open(ctx: Context<ReclaimItemOpen>) -> ProgramResult {
         let auction: &mut Account<OpenAuction> = &mut ctx.accounts.auction;
         let auction_ata = &ctx.accounts.auction_ata;

@@ -4,6 +4,7 @@ import { PublicKey } from '@solana/web3.js';
 export interface OpenAuction {
     owner: PublicKey,
     mint: PublicKey,
+    tokenMint: PublicKey,
     tokenAmount: anchor.BN,
 
     startTime: anchor.BN,
@@ -23,6 +24,7 @@ export interface OpenAuction {
     minBidIncrement: anchor.BN,
 
     bump: anchor.BN,
+    projectId: anchor.BN,
 }
 
 export interface SealedAuction {

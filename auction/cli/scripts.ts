@@ -6,6 +6,7 @@ import {
     SystemProgram,
     SYSVAR_RENT_PUBKEY,
     Transaction,
+    ParsedAccountData,
     TransactionInstruction,
     sendAndConfirmTransaction
 } from '@solana/web3.js';
@@ -18,7 +19,7 @@ import { keccak_256 } from 'js-sha3';
 import * as assert from "assert";
 
 const PROGRAM_ID = "3VwUm7B1u5VDonuwP4NXQVkkkam3NGpAuKanChxkRDAQ";
-const DOGE_TOKEN_MINT = new PublicKey("AsACVnuMa5jpmfp3BjArmb2qWg5A6HBkuXePwT37RrLY");
+const TREASURY_WALLET = new PublicKey("32NL69SFk8GLPFZfKQwsuexcXHd7rqAQn1mrasF1ksVj");
 const DECIMALS = 100;
 
 anchor.setProvider(anchor.Provider.local(web3.clusterApiUrl('devnet')));
@@ -56,13 +57,15 @@ const main = async () => {
 export const CreateOpenAuction = async (
     owner: PublicKey,
     nft_mint: PublicKey,
+    token_mint: PublicKey,
     auctionTitle: String,
     floor: number,
     increment: number,
     biddercap: Number,
     startTime: Number,
     endTime: Number,
-    amount: Number
+    amount: Number,
+    project_id: Number,
 ) => {
 
     const [auctionAddress, bump] = await PublicKey.findProgramAddress(
@@ -73,6 +76,7 @@ export const CreateOpenAuction = async (
     let auctionAta = await getAssociatedTokenAccount(auctionAddress, nft_mint);
     let ownerAta = await getAssociatedTokenAccount(owner, nft_mint);
 
+    let DECIMALS = await getDecimals(owner, token_mint);
 
     const tx = await program.rpc.createOpenAuction(new anchor.BN(bump),
         auctionTitle,
@@ -81,13 +85,15 @@ export const CreateOpenAuction = async (
         new anchor.BN(startTime),
         new anchor.BN(endTime),
         new anchor.BN(biddercap),
-        new anchor.BN(amount), {
+        new anchor.BN(amount),
+        new anchor.BN(project_id), {
         accounts: {
             auction: auctionAddress,
             auctionAta: auctionAta,
             owner,
             ownerAta,
-            mint: nft_mint,
+                mint: nft_mint,
+            tokenMint: token_mint,
             tokenProgram: TOKEN_PROGRAM_ID,
             ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
@@ -123,8 +129,12 @@ export const MakeOpenBid = async (
     auctionAddress: PublicKey,
     amount: number
 ) => {
-    let auctionAta = await getAssociatedTokenAccount(auctionAddress, DOGE_TOKEN_MINT);
-    let bidderAta = await getAssociatedTokenAccount(bidder, DOGE_TOKEN_MINT);
+    let auctionState = await getOpenAuctionState(auctionAddress);
+    let token_mint = auctionState.tokenMint;
+    let DECIMALS = await getDecimals(bidder, token_mint);
+
+    let auctionAta = await getAssociatedTokenAccount(auctionAddress, token_mint);
+    let bidderAta = await getAssociatedTokenAccount(bidder, token_mint);
 
     const tx = await program.rpc.makeOpenBid(
         new anchor.BN(amount * DECIMALS), {
@@ -133,7 +143,7 @@ export const MakeOpenBid = async (
             auctionAta: auctionAta,
             bidder,
             bidderAta,
-            tokenMint: DOGE_TOKEN_MINT,
+            tokenMint: token_mint,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -150,8 +160,10 @@ export const ReclaimOpenBid = async (
     bidder: PublicKey,
     auctionAddress: PublicKey,
 ) => {
-    let auctionAta = await getAssociatedTokenAccount(auctionAddress, DOGE_TOKEN_MINT);
-    let bidderAta = await getAssociatedTokenAccount(bidder, DOGE_TOKEN_MINT);
+    let auctionState = await getOpenAuctionState(auctionAddress);
+    let token_mint = auctionState.tokenMint;
+    let auctionAta = await getAssociatedTokenAccount(auctionAddress, token_mint);
+    let bidderAta = await getAssociatedTokenAccount(bidder, token_mint);
 
     const tx = await program.rpc.reclaimOpenBid({
         accounts: {
@@ -159,7 +171,9 @@ export const ReclaimOpenBid = async (
             auctionAta: auctionAta,
             bidder,
             bidderAta,
+            treasuryWallet: TREASURY_WALLET,
             tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
         },
         signers: [],
     });
@@ -200,8 +214,10 @@ export const WithdrawWinningBidOpen = async (
     owner: PublicKey,
     auctionAddress: PublicKey,
 ) => {
-    let auctionAta = await getAssociatedTokenAccount(auctionAddress, DOGE_TOKEN_MINT);
-    let ownerAta = await getAssociatedTokenAccount(owner, DOGE_TOKEN_MINT);
+    let auctionState = await getOpenAuctionState(auctionAddress);
+    let token_mint = auctionState.tokenMint;
+    let auctionAta = await getAssociatedTokenAccount(auctionAddress, token_mint);
+    let ownerAta = await getAssociatedTokenAccount(owner, token_mint);
 
     const tx = await program.rpc.withdrawWinningBidOpen({
         accounts: {
@@ -262,7 +278,7 @@ export const getAuctionKey = async (
         {
             filters: [
                 {
-                    dataSize: 366 + 8 + 40 * bidderCap
+                    dataSize: 400 + 8 + 40 * bidderCap
                 },
                 {
                     memcmp: {
@@ -288,6 +304,18 @@ export const getOpenAuctionState = async (
     try {
         let auctionState = await program.account.openAuction.fetch(auctionAddress);
         return auctionState as OpenAuction;
+    } catch {
+        return null;
+    }
+}
+
+export const getDecimals = async (owner: PublicKey, tokenMint: PublicKey): Promise<number | null> => {
+    try {
+        let ownerTokenAccount = await getAssociatedTokenAccount(owner, tokenMint);
+        const tokenAccount = await solConnection.getParsedAccountInfo(ownerTokenAccount);
+        let decimal = (tokenAccount.value?.data as ParsedAccountData).parsed.info.tokenAmount.decimals;
+        let DECIMALS = Math.pow(10, decimal);    
+        return DECIMALS;
     } catch {
         return null;
     }

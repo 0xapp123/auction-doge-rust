@@ -31,6 +31,7 @@ pub struct CreateOpenAuction<'info> {
     #[account(mut)]
     pub owner_ata: AccountInfo<'info>,
     pub mint: Account<'info, Mint>,
+    pub token_mint: Account<'info, Mint>,
     #[account(address = anchor_spl::token::ID)]
     pub token_program: AccountInfo<'info>,
     #[account(address = spl_associated_token_account::ID)]

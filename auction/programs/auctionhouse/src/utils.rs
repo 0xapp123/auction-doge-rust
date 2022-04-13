@@ -6,7 +6,7 @@ use anchor_lang::solana_program::{
 };
 use tiny_keccak::{Hasher, Keccak};
 
-pub const TREASURY_WALLET: &str = "Fs8R7R6dP3B7mAJ6QmWZbomBRuTbiJyiR4QYjoxhLdPu";
+pub const TREASURY_WALLET: &str = "32NL69SFk8GLPFZfKQwsuexcXHd7rqAQn1mrasF1ksVj";
 pub const FEE_AMOUNT: u64 = 25000000;
 
 pub fn create_ata<'info>(
