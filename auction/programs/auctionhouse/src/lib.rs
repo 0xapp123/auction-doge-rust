@@ -80,7 +80,7 @@ pub mod auctionhouse {
 
         auction.owner = *owner.key;
         auction.mint = mint.key();
-        auciton.token_mint = token_mint.key();
+        auction.token_mint = token_mint.key();
         auction.token_amount = token_amount;
 
         auction.start_time = if start_time == 0 {

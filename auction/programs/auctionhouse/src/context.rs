@@ -90,7 +90,7 @@ pub struct ReclaimOpenBid<'info> {
         mut,
         constraint = auction_ata.mint == *token_mint.to_account_info().key,
     )]
-    pub auction_ata: AccountInfo<'info>,
+    pub auction_ata: Account<'info, TokenAccount>,
     #[account(mut)]
     pub bidder: Signer<'info>,
     #[account(
@@ -98,7 +98,7 @@ pub struct ReclaimOpenBid<'info> {
         constraint = bidder_ata.mint == *token_mint.to_account_info().key,
         constraint = bidder_ata.owner == *bidder.key,
     )]
-    pub bidder_ata: AccountInfo<'info>,
+    pub bidder_ata: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = treasury_wallet.key() == TREASURY_WALLET.parse::<Pubkey>().unwrap(),
@@ -120,7 +120,7 @@ pub struct WithdrawItemOpen<'info> {
         mut,
         constraint = auction_ata.mint == *mint.to_account_info().key,
     )]
-    pub auction_ata: AccountInfo<'info>,
+    pub auction_ata: Account<'info, TokenAccount>,
     #[account(mut)]
     pub highest_bidder: Signer<'info>,
     #[account(
@@ -128,7 +128,7 @@ pub struct WithdrawItemOpen<'info> {
         constraint = highest_bidder_ata.mint == *mint.to_account_info().key,
         constraint = highest_bidder_ata.owner == *highest_bidder.key,
     )]
-    pub highest_bidder_ata: AccountInfo<'info>,
+    pub highest_bidder_ata: Account<'info, TokenAccount>,
     pub mint: Account<'info, Mint>,
     #[account(address = anchor_spl::token::ID)]
     pub token_program: AccountInfo<'info>,
@@ -150,13 +150,13 @@ pub struct WithdrawWinningBidOpen<'info> {
         mut,
         constraint = auction_ata.mint == *token_mint.to_account_info().key,
     )]
-    pub auction_ata: AccountInfo<'info>,
+    pub auction_ata: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = owner_ata.mint == *token_mint.to_account_info().key,
         constraint = owner_ata.owner == *owner.key,
     )]
-    pub owner_ata: AccountInfo<'info>,
+    pub owner_ata: Account<'info, TokenAccount>,
 
     pub token_mint: Account<'info, Mint>,
     #[account(address = anchor_spl::token::ID)]
@@ -171,7 +171,7 @@ pub struct ReclaimItemOpen<'info> {
         mut,
         constraint = auction_ata.mint == *mint.to_account_info().key,
     )]
-    pub auction_ata: AccountInfo<'info>,
+    pub auction_ata: Account<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
     #[account(
@@ -179,7 +179,7 @@ pub struct ReclaimItemOpen<'info> {
         constraint = owner_ata.mint == *mint.to_account_info().key,
         constraint = owner_ata.owner == *owner.key,
     )]
-    pub owner_ata: AccountInfo<'info>,
+    pub owner_ata: Account<'info, TokenAccount>,
     pub mint: Account<'info, Mint>,
     #[account(address = anchor_spl::token::ID)]
     pub token_program: AccountInfo<'info>,
