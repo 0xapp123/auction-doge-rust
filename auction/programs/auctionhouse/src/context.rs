@@ -2,9 +2,7 @@ use crate::account::*;
 use crate::utils::*;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{system_program, sysvar};
-use anchor_spl::{
-    token::{TokenAccount, Mint},
-};
+use anchor_spl::token::{Mint, TokenAccount};
 
 #[derive(Accounts)]
 #[instruction(
@@ -26,7 +24,7 @@ pub struct CreateOpenAuction<'info> {
         VECTOR_LENGTH_PREFIX + (bidder_cap as usize)*PUBLIC_KEY_LENGTH +
         VECTOR_LENGTH_PREFIX + (bidder_cap as usize)*U64_LENGTH)]
     pub auction: Account<'info, OpenAuction>,
-    #[account(mut)]
+    // #[account(mut)]
     pub auction_ata: AccountInfo<'info>,
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -57,11 +55,7 @@ pub struct CancelOpenAuction<'info> {
 pub struct MakeOpenBid<'info> {
     #[account(mut, has_one = token_mint)]
     pub auction: Account<'info, OpenAuction>,
-    #[account(
-        mut,
-        constraint = auction_ata.mint == *token_mint.to_account_info().key,
-    )]
-    pub auction_ata: Account<'info, TokenAccount>,
+    pub auction_ata: AccountInfo<'info>,
     #[account(mut)]
     pub bidder: Signer<'info>,
     #[account(
@@ -86,11 +80,11 @@ pub struct MakeOpenBid<'info> {
 pub struct ReclaimOpenBid<'info> {
     #[account(mut, has_one = token_mint)]
     pub auction: Account<'info, OpenAuction>,
-    #[account(
-        mut,
-        constraint = auction_ata.mint == *token_mint.to_account_info().key,
-    )]
-    pub auction_ata: Account<'info, TokenAccount>,
+    // #[account(
+    //     mut,
+    //     constraint = auction_ata.mint == *token_mint.to_account_info().key,
+    // )]
+    pub auction_ata: AccountInfo<'info>,
     #[account(mut)]
     pub bidder: Signer<'info>,
     #[account(
@@ -114,7 +108,7 @@ pub struct ReclaimOpenBid<'info> {
 
 #[derive(Accounts)]
 pub struct WithdrawItemOpen<'info> {
-    #[account(mut, has_one = highest_bidder, has_one = mint)]
+    #[account(mut, has_one = highest_bidder.key(), has_one = mint)]
     pub auction: Account<'info, OpenAuction>,
     #[account(
         mut,
@@ -123,12 +117,12 @@ pub struct WithdrawItemOpen<'info> {
     pub auction_ata: Account<'info, TokenAccount>,
     #[account(mut)]
     pub highest_bidder: Signer<'info>,
-    #[account(
-        mut,
-        constraint = highest_bidder_ata.mint == *mint.to_account_info().key,
-        constraint = highest_bidder_ata.owner == *highest_bidder.key,
-    )]
-    pub highest_bidder_ata: Account<'info, TokenAccount>,
+    // #[account(
+    //     mut,
+    //     constraint = highest_bidder_ata.mint == *mint.to_account_info().key,
+    //     constraint = highest_bidder_ata.owner == *highest_bidder.key,
+    // )]
+    pub highest_bidder_ata: AccountInfo<'info>,
     pub mint: Account<'info, Mint>,
     #[account(address = anchor_spl::token::ID)]
     pub token_program: AccountInfo<'info>,

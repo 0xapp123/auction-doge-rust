@@ -12,13 +12,10 @@ import {
 } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID, AccountLayout, MintLayout, ASSOCIATED_TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 
-import fs from 'fs';
+import * as fs from 'fs';
 import { OpenAuction } from './types';
-import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
-import { keccak_256 } from 'js-sha3';
-import * as assert from "assert";
 
-const PROGRAM_ID = "3VwUm7B1u5VDonuwP4NXQVkkkam3NGpAuKanChxkRDAQ";
+const PROGRAM_ID = "5JNnRQLNjzW21tJTPT6PaLnqiYN3d9jvtcCvHCfkoXuU";
 const TREASURY_WALLET = new PublicKey("32NL69SFk8GLPFZfKQwsuexcXHd7rqAQn1mrasF1ksVj");
 const DECIMALS = 100;
 
@@ -42,15 +39,15 @@ console.log('ProgramId: ', program.programId.toBase58());
 
 
 const main = async () => {
-    let address = await getAuctionKey(new PublicKey('7vyTPE6drcfvPiyHSRo77QfkCSAHRWuf5di3zNCtPbv6'), 5);
-    console.log(address.toBase58());
-    let state = await getOpenAuctionState(address);
-    console.log(state.endTime.toNumber());
+    // let address = await getAuctionKey(new PublicKey('GF4XmpVKCf9aozU5igmr9sKNzDBkjvmiWujx8uC7Bnp4'), 5);
+    // console.log(address.toBase58());
+    // let state = await getOpenAuctionState(address);
+    // console.log(state.endTime.toNumber());
     // console.log(state.title.toString());
-    // await CreateOpenAuction(payer.publicKey, new PublicKey('7vyTPE6drcfvPiyHSRo77QfkCSAHRWuf5di3zNCtPbv6'), 'My F Auction', 10, 100, 5, 0, 1649326100, 1);
+    await CreateOpenAuction(payer.publicKey, new PublicKey('Fp7WgqJpzBcRyMJP1i9aoSiwhAr8ZtzVSorz4YbZusAL'), new PublicKey('DjHSPVtttbj25BTNmPVvjG9Tnm5F4Wm9arGtrmaYKM6N'), 'My Ff Auction', 10, 1, 5, 0, 1650950713, 1, 1);
     // await CancelOpenAuction(payer.publicKey, address);
     // await MakeOpenBid(payer.publicKey, address, 11);
-    await ReclaimItemOpen(payer.publicKey, address);
+    // await ReclaimItemOpen(payer.publicKey, address);
     // console.log(state.endTime.toNumber());
 }
 
@@ -61,11 +58,11 @@ export const CreateOpenAuction = async (
     auctionTitle: String,
     floor: number,
     increment: number,
-    biddercap: Number,
-    startTime: Number,
-    endTime: Number,
-    amount: Number,
-    project_id: Number,
+    biddercap: number,
+    startTime: number,
+    endTime: number,
+    amount: number,
+    project_id: number,
 ) => {
 
     const [auctionAddress, bump] = await PublicKey.findProgramAddress(
@@ -77,6 +74,17 @@ export const CreateOpenAuction = async (
     let ownerAta = await getAssociatedTokenAccount(owner, nft_mint);
 
     let DECIMALS = await getDecimals(owner, token_mint);
+
+    console.log(auctionAddress.toBase58(), "auctionAddress");
+    console.log(auctionAta.toBase58(), "auctionAta");
+    console.log(owner.toBase58(), "owner");
+    console.log(ownerAta.toBase58(), "ownerAta");
+    console.log(nft_mint.toBase58(), "nft_mint");
+    console.log(token_mint.toBase58(), "token_mint");
+    console.log(TOKEN_PROGRAM_ID.toBase58(), "TOKEN_PROGRAM_ID");
+    console.log(ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), "ASSOCIATED_TOKEN_PROGRAM_ID");
+    console.log(SYSVAR_RENT_PUBKEY.toBase58(), "SYSVAR_RENT_PUBKEY");
+
 
     const tx = await program.rpc.createOpenAuction(new anchor.BN(bump),
         auctionTitle,
@@ -92,7 +100,7 @@ export const CreateOpenAuction = async (
             auctionAta: auctionAta,
             owner,
             ownerAta,
-                mint: nft_mint,
+            mint: nft_mint,
             tokenMint: token_mint,
             tokenProgram: TOKEN_PROGRAM_ID,
             ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -316,7 +324,7 @@ export const getDecimals = async (owner: PublicKey, tokenMint: PublicKey): Promi
         let ownerTokenAccount = await getAssociatedTokenAccount(owner, tokenMint);
         const tokenAccount = await solConnection.getParsedAccountInfo(ownerTokenAccount);
         let decimal = (tokenAccount.value?.data as ParsedAccountData).parsed.info.tokenAmount.decimals;
-        let DECIMALS = Math.pow(10, decimal);    
+        let DECIMALS = Math.pow(10, decimal);
         return DECIMALS;
     } catch {
         return null;
