@@ -1,12 +1,15 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{
-    system_instruction::transfer,
-    program::invoke,
-    program::invoke_signed
+    program::invoke, program::invoke_signed, system_instruction::transfer,
 };
 use tiny_keccak::{Hasher, Keccak};
 
 pub const TREASURY_WALLET: &str = "32NL69SFk8GLPFZfKQwsuexcXHd7rqAQn1mrasF1ksVj";
+pub const ADMIN_WALLET: [&str; 3] = [
+    "Fe4KejEc1pgo6MxjfRGYL1u5qMpYN7FMxPKYjbrdsFFE",
+    "32NL69SFk8GLPFZfKQwsuexcXHd7rqAQn1mrasF1ksVj",
+    "6dWYBATRHmnqn73WwAVnWgUYPniB5HJt8vzXbdTcBJfJ",
+];
 pub const FEE_AMOUNT: u64 = 25000000;
 
 pub fn create_ata<'info>(
@@ -19,7 +22,6 @@ pub fn create_ata<'info>(
     system_program: AccountInfo<'info>,
     rent_sysvar: AccountInfo<'info>,
 ) -> ProgramResult {
-
     invoke_signed(
         &spl_associated_token_account::create_associated_token_account(
             &payer.key(),
@@ -48,9 +50,8 @@ pub fn transfer_spl<'info>(
     dst_ata: AccountInfo<'info>,
     amount: u64,
     token_program: AccountInfo<'info>,
-    signer_seeds: &[&[&[u8]]]
+    signer_seeds: &[&[&[u8]]],
 ) -> ProgramResult {
-
     invoke_signed(
         &spl_token::instruction::transfer(
             &token_program.key(),
@@ -64,7 +65,7 @@ pub fn transfer_spl<'info>(
             src.to_account_info(),
             src_ata.to_account_info(),
             dst_ata.to_account_info(),
-            token_program.to_account_info()
+            token_program.to_account_info(),
         ],
         signer_seeds,
     )?;
@@ -77,16 +78,15 @@ pub fn transfer_sol<'info>(
     src: AccountInfo<'info>,
     dst: AccountInfo<'info>,
     amount: u64,
-    system_program: AccountInfo<'info>
+    system_program: AccountInfo<'info>,
 ) -> ProgramResult {
-
     invoke(
         &transfer(&src.key(), &dst.key(), amount),
         &[
             src.to_account_info(),
             dst.to_account_info(),
-            system_program.to_account_info()
-        ]
+            system_program.to_account_info(),
+        ],
     )?;
 
     Ok(())
@@ -97,7 +97,7 @@ pub fn transfer_sol<'info>(
 pub fn transfer_from_owned_account(
     src: &mut AccountInfo,
     dst: &mut AccountInfo,
-    amount: u64
+    amount: u64,
 ) -> ProgramResult {
     **src.try_borrow_mut_lamports()? = src
         .lamports()
@@ -123,16 +123,18 @@ pub fn compute_bid_hash(bid: u64, nonce: u64) -> [u8; 32] {
 
 pub fn name_seed(name: &str) -> &[u8] {
     let b = name.as_bytes();
-    if b.len() > 32 { &b[0..32] } else { b }
+    if b.len() > 32 {
+        &b[0..32]
+    } else {
+        b
+    }
 }
 
 #[macro_export]
-macro_rules! require{
-       ($a:expr,$b:expr)=>{
-           {
-               if !$a {
-                   return $b
-               }
-           }
-       }
+macro_rules! require {
+    ($a:expr,$b:expr) => {{
+        if !$a {
+            return $b;
+        }
+    }};
 }

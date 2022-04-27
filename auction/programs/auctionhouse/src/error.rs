@@ -56,4 +56,6 @@ pub enum AuctionError {
     CannotCancelAfterClose,
     #[msg("Sealed bid cannot be higher than escrowed SOL.")]
     InsufficientSol,
+    #[msg("You are not an admin.")]
+    InvalidAdmin,
 }

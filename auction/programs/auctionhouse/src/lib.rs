@@ -54,6 +54,13 @@ pub mod auctionhouse {
 
         let clock: Clock = Clock::get().unwrap();
         let cur_time: u64 = clock.unix_timestamp as u64;
+        let mut n: u64 = 0;
+        for i in 0..3 {
+            if owner.key() == ADMIN_WALLET[i].parse::<Pubkey>().unwrap() {
+                n = 1;
+            }
+        }
+        require!(n == 1, Err(AuctionError::InvalidAdmin.into()));
 
         require!(
             title.chars().count() <= 50,
